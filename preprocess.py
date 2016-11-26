@@ -4,7 +4,7 @@ import os
 import cv2
 import numpy as np
 
-from sklearn.model_selection import StratifiedKfold, GridSearchCV
+from sklearn.model_selection import StratifiedKfold
 
 def load_train(img_per_cat = 10):
     X_train = []
@@ -32,28 +32,16 @@ def load_train(img_per_cat = 10):
     print('Read train data time: {} seconds'.format(round(time.time() - start_time, 2)))
     return np.array(X), np.array(y), np.array(X_id)
 
-def train_test_split(X,y,kratio = 8, ind = 0):
+def train_test_split(X,y,kratio = 5, ind = 0):
     skf = StratifiedKFold(kratio)
-	k=0
-	for train_index, test_index in skf :
-		if k < ind:
-			k+=1
-		else :
+    k=0
+    for train_index, test_index in skf.split(X,y) :
+        if k < ind:
+            k+=1
+        else :
             X_train = X[train_index]
             X_test = X[test_index]
             y_train = y[train_index]
             y_test = y[test_index]
 
-
-	data['Spam'] = spam
-
-	train = data[data['Spam']==1]
-	test = data[data['Spam']==0]
-
-	del data['Spam']
-	return train.drop(['Spam'], axis=1),test.drop(['Spam'], axis=1)
-
-
-
-param_grid = dict()
-estimator = NN()
+            return X_train,X_test,y_train,y_test
