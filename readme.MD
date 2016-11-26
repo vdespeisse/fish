@@ -2,6 +2,7 @@
 
 - NN that locates fish in image
 - Classifier that takes as input the output of that NN
+- Don't let an extra chromosome let you down
 
 ## Links
  - https://www.kaggle.com/qiubit/the-nature-conservancy-fisheries-monitoring/detecting-night-photos
