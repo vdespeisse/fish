@@ -1,6 +1,7 @@
 from sklearn.base import BaseEstimator
 import pandas as pd
 import numpy as np
+import preprocess as pre
 
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Flatten
@@ -16,6 +17,7 @@ class NN(BaseEstimator):
                 optimizer=SGD(lr=1e-2, decay=1e-6, momentum=0.9, nesterov=True), loss="categorical_crossentropy",
                 batch_size =16, nb_epoch=30, verbose = 1, shuffle = True,
                 callbacks=[EarlyStopping(monitor='val_loss', patience=3, verbose=0),]):
+
         self.layers = layers
         self.optimizer = optimizer
         self.loss= loss
@@ -28,17 +30,19 @@ class NN(BaseEstimator):
 
     def fit(self,X,y,sample_weight = None):
 
+        X,X_valid,y,y_valid = pre.train_test_split(X,y)
+
         self.model = Sequential()
         for layer in self.layers :
-            if self.verbose >= 1 : print("Adding "+ layer['type'] +"(" +str(layer['params']) +") ...")
+            if self.verbose >= 1 : print("Adding "+ str(layer['type']) +"(" +str(layer['params']) +") ...")
             self.model.add(layer["type"](**layer["params"]))
 
         self.model.compile(optimizer=self.optimizer, loss = self.loss)
         self.model.fit(X, y, batch_size=self.batch_size, nb_epoch=self.nb_epoch,
-              shuffle=self.shuffle, verbose=self.verbose, validation_data=(X_valid, Y_valid),
+              shuffle=self.shuffle, verbose=self.verbose, validation_data=(X_valid, y_valid),
               callbacks=self.callbacks)
         self._on = True
-        
+
         return self
     def predict(self,X,sample_weight = None):
         if self._on == True :

@@ -48,7 +48,7 @@ def load_train(img_per_cat = 10):
             X.append(img)
             X_id.append(flbase)
             y.append(index)
-    X,y = normalize_data(X,y)
+    # X,y = normalize_data(X,y)
     print('Read train data time: {} seconds'.format(round(time.time() - start_time, 2)))
     return X,y,X_id
 
@@ -58,14 +58,14 @@ def train_test_split(X,y,split_ratio = 5, ind = 0):
     for train_index, test_index in skf.split(X,y) :
         if k < ind:
             k+=1
-            
+
         else :
             print train_index, test_index
             X_train = X[train_index]
             X_test = X[test_index]
             y_train = y[train_index]
             y_test = y[test_index]
-            # X_train,y_train= normalize_data(X_train, y_train)
-            # X_test,y_test= normalize_data(X_test, y_test)
+            X_train,y_train= normalize_data(X_train, y_train)
+            X_test,y_test= normalize_data(X_test, y_test)
 
             return X_train,X_test,y_train,y_test
