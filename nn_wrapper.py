@@ -38,12 +38,13 @@ class NN(BaseEstimator):
               shuffle=self.shuffle, verbose=self.verbose, validation_data=(X_valid, Y_valid),
               callbacks=self.callbacks)
         self._on = True
-
+        
+        return self
     def predict(self,X,sample_weight = None):
         if self._on == True :
-			return self.model.predict(X, batch_size=self.batch_size, verbose = self.verbose)
-		else :
-			return 0
+            return self.model.predict(X, batch_size=self.batch_size, verbose = self.verbose)
+        else :
+            return 0
 
     def score(self, X,y,sample_weight = None):
         result = self.predict(X)
