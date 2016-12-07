@@ -102,7 +102,7 @@ for fld in folders:
         if i > img_per_cat : break
         i+=1
         flbase = os.path.basename(fl)
-        img = cv2.imread(fl)
+        img = resi
         X.append(img)
         X_id.append(flbase)
         y.append(index)

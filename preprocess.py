@@ -6,9 +6,9 @@ import numpy as np
 
 from sklearn.model_selection import StratifiedKFold
 from keras.utils import np_utils
-def resize_img(img,width=720, height=1280):
+def resize_img(img,width=1280, height=720):
     return cv2.resize(img,(width,height),interpolation = cv2.INTER_LINEAR)
-def readimg(path, width = 720, height = 1280):
+def readimg(path, width = 1280, height = 720):
     img = cv2.imread(path)
     return resize_img(img, width, height)
 
