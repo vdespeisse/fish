@@ -36,6 +36,9 @@ import re
 import sys
 import tarfile
 
+import sliding_window as sw
+
+import pandas as pd
 import numpy as np
 from six.moves import urllib
 import tensorflow as tf
@@ -120,7 +123,7 @@ def create_graph():
     _ = tf.import_graph_def(graph_def, name='')
 
 
-def run_inference_on_image(image):
+def run_inference_on_image(image,stepSize,windowSize,fishDict = "./data/fishnames.csv"):
   """Runs inference on an image.
   Args:
     image: Image file name.
@@ -130,8 +133,6 @@ def run_inference_on_image(image):
   # if not tf.gfile.Exists(image):
   #   tf.logging.fatal('File does not exist %s', image)
   # image_data = tf.gfile.FastGFile(image, 'rb').read()
- 
-
 
   # Creates graph from saved GraphDef.
   create_graph()
@@ -145,21 +146,30 @@ def run_inference_on_image(image):
     # 'DecodeJpeg/contents:0': A tensor containing a string providing JPEG
     #   encoding of the image.
     # Runs the softmax tensor by feeding the image_data as input to the graph.
+    fishnames = pd.read_csv(fishDict).fishname.values
+    windowScores = {}
     softmax_tensor = sess.graph.get_tensor_by_name('softmax:0')
-    predictions = sess.run(softmax_tensor,
-                           {'DecodeJpeg:0': image})
-    predictions = np.squeeze(predictions)
+    for (x,y,window) in sw.sliding_window(image,stepSize,windowSize):
+        predictions = sess.run(softmax_tensor,
+                               {'DecodeJpeg:0': window})
+        predictions = np.squeeze(predictions)
 
-    # Creates node ID --> English string lookup.
-    node_lookup = NodeLookup()
-    result = []
-    top_k = predictions.argsort()[-5:][::-1]
-    for node_id in top_k:
-      human_string = node_lookup.id_to_string(node_id)
-      score = predictions[node_id]
-      print('%s (score = %.5f)' % (human_string, score))
-      result.append((human_string,score))
-    return result
+        # Creates node ID --> English string lookup.
+        node_lookup = NodeLookup()
+        results = []
+        top_k = predictions.argsort()[-5:][::-1]
+        for node_id in top_k:
+          human_string = node_lookup.id_to_string(node_id)
+          score = predictions[node_id]
+          print('%s (score = %.5f)' % (human_string, score))
+          results.append((human_string,score))
+        fishscore = 0.0
+        for res in results :
+            names = res[0].replace(', ',',').lower().split(',')
+            if len(np.intersect1d(names,fishnames)) > 0:
+                fishscore += res[1]
+        windowScores[(x,y)] = fishscore
+    return windowScores
 
 
 def maybe_download_and_extract():

@@ -1,2 +1,3 @@
 train/
 xgboost_wrapper.py
+*.pyc
