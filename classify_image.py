@@ -123,7 +123,7 @@ def create_graph():
     _ = tf.import_graph_def(graph_def, name='')
 
 
-def run_inference_on_image(image,stepSize,windowSize,fishDict = "./data/fishnames.csv"):
+def run_inference_on_image(image,stepSize,windowSize,node_lookup,fishDict = "./data/fishnames.csv"):
   """Runs inference on an image.
   Args:
     image: Image file name.
@@ -131,11 +131,12 @@ def run_inference_on_image(image,stepSize,windowSize,fishDict = "./data/fishname
     Nothing
   """
   # if not tf.gfile.Exists(image):
-  #   tf.logging.fatal('File does not exist %s', image)
+  #   tf.logging.fatal('File does not exisnode_lookup = NodeLookup()t %s', image)
   # image_data = tf.gfile.FastGFile(image, 'rb').read()
 
   # Creates graph from saved GraphDef.
   create_graph()
+
 
   with tf.Session() as sess:
     # Some useful tensors:
@@ -146,29 +147,32 @@ def run_inference_on_image(image,stepSize,windowSize,fishDict = "./data/fishname
     # 'DecodeJpeg/contents:0': A tensor containing a string providing JPEG
     #   encoding of the image.
     # Runs the softmax tensor by feeding the image_data as input to the graph.
+    i=0
     fishnames = pd.read_csv(fishDict).fishname.values
     windowScores = {}
     softmax_tensor = sess.graph.get_tensor_by_name('softmax:0')
     for (x,y,window) in sw.sliding_window(image,stepSize,windowSize):
+        i+=1
+        if i%100==0 : print("Processing %dth window" % i)
         predictions = sess.run(softmax_tensor,
                                {'DecodeJpeg:0': window})
         predictions = np.squeeze(predictions)
 
         # Creates node ID --> English string lookup.
-        node_lookup = NodeLookup()
+
         results = []
         top_k = predictions.argsort()[-5:][::-1]
         for node_id in top_k:
           human_string = node_lookup.id_to_string(node_id)
           score = predictions[node_id]
-          print('%s (score = %.5f)' % (human_string, score))
+        #   print('%s (score = %.5f)' % (human_string, score))
           results.append((human_string,score))
         fishscore = 0.0
         for res in results :
             names = res[0].replace(', ',',').lower().split(',')
             if len(np.intersect1d(names,fishnames)) > 0:
                 fishscore += res[1]
-        windowScores[(x,y)] = fishscore
+        windowScores[(x,y)] = {'score' : fishscore, 'names': names}
     return windowScores
 
 
