@@ -11,7 +11,8 @@ import preprocess as pre
 def run(stepSize=20, windowSize=(200,200), fishDict ="./data/fishnames.csv",node_lookup = NodeLookup()):
     maybe_download_and_extract()
     # folders = ['ALB', 'BET', 'DOL', 'LAG', 'NoF', 'OTHER', 'SHARK', 'YFT']
-    folders = ['ALB']
+    folders = ['DOL']
+    print('DOL')
     for fld in folders:
         path = os.path.join('.', 'testrun', fld, '*.jpg')
         files = glob.glob(path)
