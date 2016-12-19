@@ -151,7 +151,8 @@ def run_inference_on_image(image,stepSize,windowSize,node_lookup,fishDict = "./d
     fishnames = pd.read_csv(fishDict).fishname.values
     windowScores = {}
     softmax_tensor = sess.graph.get_tensor_by_name('softmax:0')
-    for (x,y,window) in sw.sliding_window(image,stepSize,windowSize):
+    for (rect,window) in sw.sliding_window(image,stepSize,windowSize):
+        if (rect.x+rect.width>image.shape[1] | rect.y+rect.height>image.shape[0]): continue
         i+=1
         if i%100==0 : print("Processing %dth window" % i)
         predictions = sess.run(softmax_tensor,
@@ -172,11 +173,38 @@ def run_inference_on_image(image,stepSize,windowSize,node_lookup,fishDict = "./d
             names = res[0].replace(', ',',').lower().split(',')
             if len(np.intersect1d(names,fishnames)) > 0:
                 fishscore += res[1]
-        windowScores[sw.Rect((x,y),windowSize)] = {'score' : fishscore, 'names': names}
+        windowScores[rect] = fishscore
+
     bestWindow,bestScore = sw.find_best(windowScores,(image.shape[1],image.shape[0]))
     optimalWindowScores = {bestWindow: bestScore}
-    for (x,y,window) in sw.optimal_window(image,bestWindow):
-    return windowScores
+    (swGenerator, croppedImg) = sw.optimal_window(image,bestWindow)
+    print("cropped",croppedImg.shape)
+    for iterator in swGenerator:
+        j = 0
+        for (rect,window) in iterator:
+            if (rect.x+rect.width>croppedImg.shape[1] | rect.y+rect.height>croppedImg.shape[0]): continue
+            j+=1
+            if j%100==0 : print('Processing %dth window in' % j, iterator)
+            predictions = sess.run(softmax_tensor,
+                                   {'DecodeJpeg:0': window})
+            predictions = np.squeeze(predictions)
+            results = []
+            top_k = predictions.argsort()[-5:][::-1]
+            for node_id in top_k:
+              human_string = node_lookup.id_to_string(node_id)
+              score = predictions[node_id]
+            #   print('%s (score = %.5f)' % (human_string, score))
+              results.append((human_string,score))
+            fishscore = 0.0
+            for res in results :
+                names = res[0].replace(', ',',').lower().split(',')
+                if len(np.intersect1d(names,fishnames)) > 0:
+                    fishscore += res[1]
+            optimalWindowScores[rect]=fishscore
+
+    bestWindow,bestScore = sw.find_best(optimalWindowScores,(croppedImg.shape[1],croppedImg.shape[0]))
+
+    return bestWindow,bestScore
 
 
 def maybe_download_and_extract():
